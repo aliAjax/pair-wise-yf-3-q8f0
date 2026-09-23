@@ -18,7 +18,7 @@ function makeSelectClass(active: boolean) {
 }
 
 export default function FilterPanel({ filters, onChange, onReset, resultCount }: Props) {
-  const hasFilter = filters.smellType || filters.season || filters.emotion;
+  const hasFilter = filters.smellType || filters.season || filters.emotion || filters.revisit;
 
   return (
     <section className="container max-w-6xl mb-6">
@@ -87,6 +87,23 @@ export default function FilterPanel({ filters, onChange, onReset, resultCount }:
                     {e.emoji} {e.label}
                   </option>
                 ))}
+              </select>
+            </div>
+
+            <div className="relative">
+              <select
+                value={filters.revisit}
+                onChange={(e) => onChange('revisit', e.target.value)}
+                className={`${makeSelectClass(!!filters.revisit)} w-full sm:w-auto`}
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23${filters.revisit ? 'FBF7EE' : '8B5A2B'}' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 12px center',
+                }}
+              >
+                <option value="">全部回访状态</option>
+                <option value="waiting" className="bg-paper-50 text-ink-800">⏳ 等待回访</option>
+                <option value="due" className="bg-paper-50 text-ink-800">🔔 回访已到期</option>
               </select>
             </div>
           </div>

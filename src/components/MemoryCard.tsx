@@ -1,7 +1,9 @@
 import type { SmellMemory } from '../utils/constants';
-import { getSeasonInfo, getSmellTypeInfo, getEmotionInfo } from '../utils/constants';
-import { formatDate, contrastTextColor } from '../utils/helpers';
-import { Pencil, Trash2, ChevronDown, ChevronUp, Heart } from 'lucide-react';
+import { getSeasonInfo, getSmellTypeInfo, getEmotionInfo, REVISIT_OPTIONS } from '../utils/constants';
+import type { RevisitDays } from '../utils/constants';
+import { formatDate, contrastTextColor, isRevisitDue, revisitDaysLeft } from '../utils/helpers';
+import { useNow } from '../hooks/useNow';
+import { Pencil, Trash2, ChevronDown, ChevronUp, Heart, Clock, BellRing, X } from 'lucide-react';
 
 interface Props {
   memory: SmellMemory;
@@ -10,9 +12,12 @@ interface Props {
   onToggle: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onScheduleRevisit: (days: RevisitDays) => void;
+  onCancelRevisit: () => void;
 }
 
-export default function MemoryCard({ memory, index, isExpanded, onToggle, onEdit, onDelete }: Props) {
+export default function MemoryCard({ memory, index, isExpanded, onToggle, onEdit, onDelete, onScheduleRevisit, onCancelRevisit }: Props) {
+  const now = useNow();
   const season = getSeasonInfo(memory.season);
   const stype = getSmellTypeInfo(memory.smell_type);
   const emotion = getEmotionInfo(memory.emotion);
@@ -20,9 +25,22 @@ export default function MemoryCard({ memory, index, isExpanded, onToggle, onEdit
   const intensityWidth = `${memory.intensity * 10}%`;
   const humidityWidth = `${memory.humidity * 10}%`;
 
+  const revisit = memory.revisit;
+  const revisitDue = revisit ? isRevisitDue(revisit, now) : false;
+  const daysLeft = revisit ? revisitDaysLeft(revisit, now) : 0;
+
+  const handleCancelRevisit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm(`取消「${memory.location}」的回访安排吗？取消后卡片恢复普通状态。`)) {
+      onCancelRevisit();
+    }
+  };
+
   return (
     <article
-      className="group relative bg-paper-50 rounded-2xl border border-paper-300 shadow-card overflow-hidden hover:shadow-paper-hover hover:-translate-y-1 transition-all duration-300 animate-fadeInUp"
+      className={`group relative bg-paper-50 rounded-2xl border shadow-card overflow-hidden hover:shadow-paper-hover hover:-translate-y-1 transition-all duration-300 animate-fadeInUp ${
+        revisit ? (revisitDue ? 'border-moss-400' : 'border-lavender-400') : 'border-paper-300'
+      }`}
       style={{ animationDelay: `${Math.min(index * 60, 600)}ms` }}
     >
       <div className="flex">
@@ -78,6 +96,17 @@ export default function MemoryCard({ memory, index, isExpanded, onToggle, onEdit
                 <span className="scent-tag bg-moss-100 text-moss-600">
                   <Heart className="w-3 h-3 fill-current" /> 想再闻
                 </span>
+              )}
+              {revisit && (
+                revisitDue ? (
+                  <span className="scent-tag bg-moss-500 text-paper-50">
+                    <BellRing className="w-3 h-3" /> 回访已到期
+                  </span>
+                ) : (
+                  <span className="scent-tag bg-lavender-300/40 text-lavender-600">
+                    <Clock className="w-3 h-3" /> 还剩 {daysLeft} 天再闻
+                  </span>
+                )
               )}
             </div>
 
@@ -141,6 +170,60 @@ export default function MemoryCard({ memory, index, isExpanded, onToggle, onEdit
                   {memory.memory_text}
                 </p>
               </div>
+
+              {/* 回访安排 */}
+              <div className="mt-3 p-3.5 rounded-xl border border-dashed bg-paper-100/40 border-paper-400">
+                <div className="flex items-center justify-between gap-2 mb-2.5">
+                  <span className="font-hand text-lg text-ochre-600 flex items-center gap-1.5">
+                    <Clock className="w-4 h-4" />
+                    {revisit ? '回访进行中' : '安排回访'}
+                  </span>
+                  {revisit && (
+                    revisitDue ? (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-moss-600">
+                        <BellRing className="w-3.5 h-3.5" />
+                        到期了，可以再闻一次
+                      </span>
+                    ) : (
+                      <span className="text-xs text-lavender-600 font-medium">
+                        {formatDate(revisit.due_at)} 到期 · 还剩 {daysLeft} 天
+                      </span>
+                    )
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {REVISIT_OPTIONS.map((d) => {
+                    const active = revisit?.days === d;
+                    return (
+                      <button
+                        key={d}
+                        onClick={(e) => { e.stopPropagation(); onScheduleRevisit(d); }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${
+                          active
+                            ? 'bg-lavender-500 text-paper-50 border-lavender-600 shadow-sm'
+                            : 'bg-paper-50 text-ochre-600 border-paper-300 hover:border-lavender-400 hover:text-lavender-600'
+                        }`}
+                      >
+                        {d} 天后再闻
+                      </button>
+                    );
+                  })}
+                  {revisit && (
+                    <button
+                      onClick={handleCancelRevisit}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-brick-500 hover:bg-brick-500/10 transition-colors ml-auto"
+                    >
+                      <X className="w-3.5 h-3.5" /> 取消回访
+                    </button>
+                  )}
+                </div>
+                {!revisit && (
+                  <p className="mt-2 text-[11px] text-ink-700/50">
+                    到期后可在筛选「回访已到期」里单独找到，最多同时安排 5 段
+                  </p>
+                )}
+              </div>
+
               <div className="mt-3 flex items-center justify-between pt-2 border-t border-paper-200/60">
                 <div className="flex items-center gap-1.5 text-[11px] text-ink-700/50">
                   <span>更新于 {formatDate(memory.updated_at)}</span>

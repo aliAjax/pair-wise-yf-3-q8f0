@@ -2,6 +2,17 @@ export type Season = 'spring' | 'summer' | 'autumn' | 'winter';
 export type SmellType = 'woody' | 'floral' | 'fruity' | 'earthy' | 'spicy' | 'sweet' | 'musty' | 'fresh' | 'burnt' | 'other';
 export type Emotion = 'warm' | 'nostalgic' | 'peaceful' | 'melancholy' | 'joyful' | 'uncomfortable' | 'surprising';
 
+export type RevisitDays = 7 | 30 | 90;
+
+export interface RevisitPlan {
+  /** 安排回访的时间 */
+  scheduled_at: string;
+  /** 到期时间（scheduled_at + days） */
+  due_at: string;
+  /** 选择的回访间隔：7 / 30 / 90 天 */
+  days: RevisitDays;
+}
+
 export interface SmellMemory {
   id: string;
   location: string;
@@ -16,7 +27,12 @@ export interface SmellMemory {
   want_again: boolean;
   created_at: string;
   updated_at: string;
+  /** 回访安排，旧数据没有该字段时表示普通状态 */
+  revisit?: RevisitPlan;
 }
+
+export const REVISIT_OPTIONS: RevisitDays[] = [7, 30, 90];
+export const MAX_REVISITS = 5;
 
 export const SEASONS: { value: Season; label: string; emoji: string }[] = [
   { value: 'spring', label: '春', emoji: '🌸' },

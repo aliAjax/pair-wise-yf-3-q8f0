@@ -2,6 +2,7 @@ import type { SmellMemory } from '../utils/constants';
 
 const now = Date.now();
 const daysAgo = (d: number) => new Date(now - d * 86400000).toISOString();
+const daysAhead = (d: number) => new Date(now + d * 86400000).toISOString();
 
 export const mockMemories: SmellMemory[] = [
   {
@@ -17,7 +18,12 @@ export const mockMemories: SmellMemory[] = [
     emotion: 'nostalgic',
     want_again: true,
     created_at: daysAgo(42),
-    updated_at: daysAgo(42),
+    updated_at: daysAgo(5),
+    revisit: {
+      scheduled_at: daysAgo(5),
+      due_at: daysAhead(25),
+      days: 30,
+    },
   },
   {
     id: 'mock-002',
@@ -123,5 +129,10 @@ export const mockMemories: SmellMemory[] = [
     want_again: true,
     created_at: daysAgo(3),
     updated_at: daysAgo(2),
+    revisit: {
+      scheduled_at: daysAgo(10),
+      due_at: daysAgo(3),
+      days: 7,
+    },
   },
 ];

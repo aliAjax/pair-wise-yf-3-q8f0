@@ -1,4 +1,4 @@
-import type { SmellMemory } from './constants';
+import type { SmellMemory, RevisitPlan } from './constants';
 
 export function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
@@ -14,10 +14,25 @@ export function formatDate(iso: string): string {
   return `${y}.${m}.${day} ${hh}:${mm}`;
 }
 
+/** 回访状态筛选：'' 全部 / 'waiting' 等待中 / 'due' 已到期 */
+export type RevisitFilter = '' | 'waiting' | 'due';
+
 export interface Filters {
   smellType: string;
   season: string;
   emotion: string;
+  revisit: RevisitFilter;
+}
+
+/** 回访是否已到期 */
+export function isRevisitDue(plan: RevisitPlan, now: number = Date.now()): boolean {
+  return new Date(plan.due_at).getTime() <= now;
+}
+
+/** 距离到期还剩几天（到期当天为 0，已到期可能为负） */
+export function revisitDaysLeft(plan: RevisitPlan, now: number = Date.now()): number {
+  const diff = new Date(plan.due_at).getTime() - now;
+  return Math.ceil(diff / 86400000);
 }
 
 export function filterMemories(memories: SmellMemory[], filters: Filters): SmellMemory[] {
@@ -25,6 +40,12 @@ export function filterMemories(memories: SmellMemory[], filters: Filters): Smell
     if (filters.smellType && m.smell_type !== filters.smellType) return false;
     if (filters.season && m.season !== filters.season) return false;
     if (filters.emotion && m.emotion !== filters.emotion) return false;
+    if (filters.revisit) {
+      if (!m.revisit) return false;
+      const due = isRevisitDue(m.revisit);
+      if (filters.revisit === 'due' && !due) return false;
+      if (filters.revisit === 'waiting' && due) return false;
+    }
     return true;
   });
 }
