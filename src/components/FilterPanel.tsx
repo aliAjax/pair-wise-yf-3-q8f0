@@ -9,6 +9,11 @@ interface Props {
   resultCount: number;
 }
 
+const REVISIT_OPTIONS: { value: string; label: string }[] = [
+  { value: 'scheduled', label: '⏳ 回访中' },
+  { value: 'due', label: '🔔 已到期' },
+];
+
 function makeSelectClass(active: boolean) {
   return `appearance-none rounded-xl px-4 py-2.5 pr-10 border text-sm font-medium transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-ochre-400 ${
     active
@@ -17,8 +22,16 @@ function makeSelectClass(active: boolean) {
   }`;
 }
 
+function ChevronBg(active: boolean) {
+  return {
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23${active ? 'FBF7EE' : '8B5A2B'}' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 12px center',
+  };
+}
+
 export default function FilterPanel({ filters, onChange, onReset, resultCount }: Props) {
-  const hasFilter = filters.smellType || filters.season || filters.emotion;
+  const hasFilter = !!(filters.smellType || filters.season || filters.emotion || filters.revisit);
 
   return (
     <section className="container max-w-6xl mb-6">
@@ -35,11 +48,7 @@ export default function FilterPanel({ filters, onChange, onReset, resultCount }:
                 value={filters.smellType}
                 onChange={(e) => onChange('smellType', e.target.value)}
                 className={`${makeSelectClass(!!filters.smellType)} w-full sm:w-auto`}
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23${filters.smellType ? 'FBF7EE' : '8B5A2B'}' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right 12px center',
-                }}
+                style={ChevronBg(!!filters.smellType)}
               >
                 <option value="">全部气味类型</option>
                 {SMELL_TYPES.map((t) => (
@@ -55,11 +64,7 @@ export default function FilterPanel({ filters, onChange, onReset, resultCount }:
                 value={filters.season}
                 onChange={(e) => onChange('season', e.target.value)}
                 className={`${makeSelectClass(!!filters.season)} w-full sm:w-auto`}
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23${filters.season ? 'FBF7EE' : '8B5A2B'}' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right 12px center',
-                }}
+                style={ChevronBg(!!filters.season)}
               >
                 <option value="">全部季节</option>
                 {SEASONS.map((s) => (
@@ -75,16 +80,28 @@ export default function FilterPanel({ filters, onChange, onReset, resultCount }:
                 value={filters.emotion}
                 onChange={(e) => onChange('emotion', e.target.value)}
                 className={`${makeSelectClass(!!filters.emotion)} w-full sm:w-auto`}
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23${filters.emotion ? 'FBF7EE' : '8B5A2B'}' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right 12px center',
-                }}
+                style={ChevronBg(!!filters.emotion)}
               >
                 <option value="">全部情绪</option>
                 {EMOTIONS.map((e) => (
                   <option key={e.value} value={e.value} className="bg-paper-50 text-ink-800">
                     {e.emoji} {e.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="relative">
+              <select
+                value={filters.revisit}
+                onChange={(e) => onChange('revisit', e.target.value)}
+                className={`${makeSelectClass(!!filters.revisit)} w-full sm:w-auto`}
+                style={ChevronBg(!!filters.revisit)}
+              >
+                <option value="">全部回访</option>
+                {REVISIT_OPTIONS.map((r) => (
+                  <option key={r.value} value={r.value} className="bg-paper-50 text-ink-800">
+                    {r.label}
                   </option>
                 ))}
               </select>

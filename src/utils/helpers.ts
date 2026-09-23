@@ -1,7 +1,19 @@
-import type { SmellMemory } from './constants';
+import type { SmellMemory, Revisit } from './constants';
+
+const DAY_MS = 86400000;
 
 export function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
+}
+
+/** 距回访到期还剩几天（到期当天及之后返回 0） */
+export function getRevisitDaysLeft(revisit: Revisit, now: number = Date.now()): number {
+  return Math.max(0, Math.ceil((new Date(revisit.revisit_at).getTime() - now) / DAY_MS));
+}
+
+/** 回访是否已到期 */
+export function isRevisitDue(revisit: Revisit, now: number = Date.now()): boolean {
+  return now >= new Date(revisit.revisit_at).getTime();
 }
 
 export function formatDate(iso: string): string {
@@ -18,13 +30,20 @@ export interface Filters {
   smellType: string;
   season: string;
   emotion: string;
+  revisit: '' | 'scheduled' | 'due';
 }
 
-export function filterMemories(memories: SmellMemory[], filters: Filters): SmellMemory[] {
+export function hasAnyFilter(filters: Filters): boolean {
+  return !!(filters.smellType || filters.season || filters.emotion || filters.revisit);
+}
+
+export function filterMemories(memories: SmellMemory[], filters: Filters, now: number = Date.now()): SmellMemory[] {
   return memories.filter(m => {
     if (filters.smellType && m.smell_type !== filters.smellType) return false;
     if (filters.season && m.season !== filters.season) return false;
     if (filters.emotion && m.emotion !== filters.emotion) return false;
+    if (filters.revisit === 'scheduled' && !(m.revisit && !isRevisitDue(m.revisit, now))) return false;
+    if (filters.revisit === 'due' && !(m.revisit && isRevisitDue(m.revisit, now))) return false;
     return true;
   });
 }

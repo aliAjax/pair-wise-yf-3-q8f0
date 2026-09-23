@@ -1,21 +1,28 @@
-import type { SmellMemory } from '../utils/constants';
-import { getSeasonInfo, getSmellTypeInfo, getEmotionInfo } from '../utils/constants';
-import { formatDate, contrastTextColor } from '../utils/helpers';
-import { Pencil, Trash2, ChevronDown, ChevronUp, Heart } from 'lucide-react';
+import type { SmellMemory, RevisitDays } from '../utils/constants';
+import { getSeasonInfo, getSmellTypeInfo, getEmotionInfo, REVISIT_DAY_OPTIONS } from '../utils/constants';
+import { formatDate, contrastTextColor, getRevisitDaysLeft, isRevisitDue } from '../utils/helpers';
+import { Pencil, Trash2, ChevronDown, ChevronUp, Heart, AlarmClock, BellRing, XCircle } from 'lucide-react';
 
 interface Props {
   memory: SmellMemory;
   index: number;
   isExpanded: boolean;
+  now: number;
   onToggle: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onScheduleRevisit: (days: RevisitDays) => void;
+  onCancelRevisit: () => void;
 }
 
-export default function MemoryCard({ memory, index, isExpanded, onToggle, onEdit, onDelete }: Props) {
+export default function MemoryCard({ memory, index, isExpanded, now, onToggle, onEdit, onDelete, onScheduleRevisit, onCancelRevisit }: Props) {
   const season = getSeasonInfo(memory.season);
   const stype = getSmellTypeInfo(memory.smell_type);
   const emotion = getEmotionInfo(memory.emotion);
+
+  const revisit = memory.revisit;
+  const revisitDue = revisit ? isRevisitDue(revisit, now) : false;
+  const revisitDaysLeft = revisit ? getRevisitDaysLeft(revisit, now) : 0;
 
   const intensityWidth = `${memory.intensity * 10}%`;
   const humidityWidth = `${memory.humidity * 10}%`;
@@ -79,6 +86,17 @@ export default function MemoryCard({ memory, index, isExpanded, onToggle, onEdit
                   <Heart className="w-3 h-3 fill-current" /> 想再闻
                 </span>
               )}
+              {revisit && (
+                revisitDue ? (
+                  <span className="scent-tag bg-brick-500 text-paper-50">
+                    <BellRing className="w-3 h-3" /> 回访已到期
+                  </span>
+                ) : (
+                  <span className="scent-tag bg-lavender-300/40 text-lavender-600">
+                    <AlarmClock className="w-3 h-3" /> {revisitDaysLeft} 天后再闻
+                  </span>
+                )
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -141,6 +159,58 @@ export default function MemoryCard({ memory, index, isExpanded, onToggle, onEdit
                   {memory.memory_text}
                 </p>
               </div>
+
+              <div className="mt-3 p-4 rounded-xl bg-paper-100/70 border border-paper-200/80">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-hand text-lg text-lavender-600">回访安排</span>
+                </div>
+
+                {revisit ? (
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      {revisitDue ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brick-500 text-paper-50 font-medium">
+                          <BellRing className="w-4 h-4" />
+                          已到约定的再闻时间
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-lavender-300/40 text-lavender-600 font-medium">
+                          <AlarmClock className="w-4 h-4" />
+                          还剩 <b className="text-base">{revisitDaysLeft}</b> 天
+                        </span>
+                      )}
+                      <span className="text-[11px] text-ink-700/50">
+                        约于 {formatDate(revisit.revisit_at)} 再闻
+                      </span>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onCancelRevisit(); }}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-brick-500 hover:bg-brick-500/10 transition-colors"
+                    >
+                      <XCircle className="w-3.5 h-3.5" /> 取消回访
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-xs text-ink-700/55 mb-2.5">
+                      过段时间再回来闻一闻这段记忆
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {REVISIT_DAY_OPTIONS.map((d) => (
+                        <button
+                          key={d}
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); onScheduleRevisit(d); }}
+                          className="px-4 py-2 rounded-xl text-sm font-medium bg-paper-50 text-lavender-600 border border-lavender-300/60 hover:bg-lavender-300/30 hover:-translate-y-0.5 transition-all duration-200"
+                        >
+                          {d} 天后再闻
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+
               <div className="mt-3 flex items-center justify-between pt-2 border-t border-paper-200/60">
                 <div className="flex items-center gap-1.5 text-[11px] text-ink-700/50">
                   <span>更新于 {formatDate(memory.updated_at)}</span>
